@@ -31,6 +31,13 @@ public class MainActivity extends AppCompatActivity {
 
         root = findViewById(R.id.root);
 
+        // vérification couleur enregistrée précédemment + application si oui
+        int savedColor = getSharedPreferences("MesPreferences", MODE_PRIVATE).getInt("mySavedBackgroundColor",0);
+        if (savedColor != 0){
+            findViewById(R.id.root).setBackgroundColor(savedColor);
+        }
+
+        // récupération + application couleur si changement orientation (= changement activity)
         if (savedInstanceState != null){
             int color = savedInstanceState.getInt("color", 0);
             if (color != 0){
@@ -74,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
                 }, 1000);
     }
 
+    // persistance de la couleur dans savedInstance pour la garder en changeant d'activity
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -81,6 +89,29 @@ public class MainActivity extends AppCompatActivity {
         Drawable background = root.getBackground();
         if (background instanceof ColorDrawable){
             outState.putInt("color",((ColorDrawable) background).getColor());
+        }
+    }
+
+    // Proposition récupération bgd color en cliquant sur back pour quitter
+    @Override
+    public void onBackPressed() {
+        Drawable background = findViewById(R.id.root).getBackground();
+        if (background instanceof ColorDrawable){
+            new AlertDialog.Builder(this)
+                    .setTitle("Au revoir")
+                    .setMessage("Enregistrer la couleur de fond avant de quitter?")
+                    .setPositiveButton("oui",(dialog, which) -> {
+                        getSharedPreferences("MesPreferences", MODE_PRIVATE)
+                                .edit()
+                                .putInt("mySavedBackgroundColor", ((ColorDrawable) background).getColor())
+                                .apply();
+                        finish();
+                    })
+                    .setNegativeButton("non", (dialog, which) -> {
+                        // Si on revient à la couleur par défaut, supprimer ColorDrawable de shared pref cf. plus haut
+                        finish();
+                    })
+                    .show();
         }
     }
 }
